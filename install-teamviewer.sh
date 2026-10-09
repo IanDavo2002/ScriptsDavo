@@ -36,7 +36,7 @@ echo "Enabling TeamViewer service..."
 sudo systemctl enable --now teamviewerd
 
 echo "Waiting for TeamViewer service to initialize..."
-sleep 10
+sleep 15
 
 echo ""
 read -p "Enter TeamViewer Assignment Token (leave blank to skip): " TV_TOKEN
@@ -44,9 +44,7 @@ read -p "Enter TeamViewer Assignment Token (leave blank to skip): " TV_TOKEN
 if [ -n "$TV_TOKEN" ]; then
     echo "Assigning device to TeamViewer..."
 
-    sudo teamviewer assignment \
-        --id "$TV_TOKEN" \
-        --grant-easy-access
+    sudo teamviewer assignment --id="$TV_TOKEN"
 
     echo "Assignment completed."
 else
