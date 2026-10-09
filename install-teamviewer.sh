@@ -21,23 +21,35 @@ sudo apt install -y "$TMP_DEB"
 echo "Fixing dependencies..."
 sudo apt --fix-broken install -y
 
-echo "Configuring GDM for Xorg..."
+# Detect Ubuntu version
+UBUNTU_VERSION=$(lsb_release -rs)
 
-if [ -f /etc/gdm3/custom.conf ]; then
+echo "Detected Ubuntu version: $UBUNTU_VERSION"
 
-    # Remove any existing Wayland settings
-    sudo sed -i '/^#\?WaylandEnable=/d' /etc/gdm3/custom.conf
+if [[ "$UBUNTU_VERSION" == "24.04" ]]; then
+    echo "Ubuntu 24.04 detected."
 
-    # Add WaylandEnable=false under [daemon]
-    if grep -q "^\[daemon\]" /etc/gdm3/custom.conf; then
-        sudo sed -i '/^\[daemon\]/a WaylandEnable=false' /etc/gdm3/custom.conf
+    if [ -f /etc/gdm3/custom.conf ]; then
+        echo "Configuring GDM to use Xorg..."
+
+        sudo sed -i '/^#\?WaylandEnable=/d' /etc/gdm3/custom.conf
+
+        if grep -q "^\[daemon\]" /etc/gdm3/custom.conf; then
+            sudo sed -i '/^\[daemon\]/a WaylandEnable=false' /etc/gdm3/custom.conf
+        else
+            echo -e "[daemon]\nWaylandEnable=false" | sudo tee -a /etc/gdm3/custom.conf >/dev/null
+        fi
+
+        echo "Wayland disabled."
     else
-        echo -e "[daemon]\nWaylandEnable=false" | sudo tee -a /etc/gdm3/custom.conf > /dev/null
+        echo "GDM configuration not found."
     fi
 
-    echo "Wayland disabled."
+elif [[ "$UBUNTU_VERSION" == "26.04" ]]; then
+    echo "Ubuntu 26.04 detected."
+    echo "Skipping Xorg configuration."
 else
-    echo "WARNING: /etc/gdm3/custom.conf not found."
+    echo "Unsupported Ubuntu version for automatic Xorg configuration."
 fi
 
 echo "Accepting TeamViewer license..."
@@ -67,18 +79,10 @@ echo "================================="
 echo " TEAMVIEWER READY"
 echo "================================="
 
-echo ""
-echo "Current TeamViewer Information:"
 teamviewer info || true
 
 echo ""
-echo "Current Display Session:"
-echo "XDG_SESSION_TYPE=$XDG_SESSION_TYPE"
-
-echo ""
-echo "IMPORTANT:"
-echo "A reboot is required before Ubuntu switches from Wayland to Xorg."
-echo ""
+echo "A reboot is recommended."
 
 read -p "Reboot now? (y/N): " REBOOT
 
